@@ -39,13 +39,13 @@ public class ModuleProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         Set<? extends Element> moduleElementSet = roundEnvironment.getElementsAnnotatedWith(Module.class);
-        List<String> modules = new ArrayList<>();
+        List<TypeElement> modules = new ArrayList<>();
         TypeMirror typeIModular = mElements.getTypeElement("com.zhqydot.framework.easymodular.core.IModule").asType();
         for (Element element : moduleElementSet) {
             if (!mTypes.isSubtype(element.asType(), typeIModular)) {
                 throw new RuntimeException("The module class [" + element.asType().toString() + "] annotated by @Modular must be implements the IModular interface." );
             }
-            modules.add(((TypeElement) element).getQualifiedName().toString());
+            modules.add(((TypeElement) element));
         }
         createFile(modules);
         return true;
@@ -62,19 +62,22 @@ public class ModuleProcessor extends AbstractProcessor {
         return annotations;
     }
 
-    private void createFile(List<String> modules) {
-        try {
-            JavaFileObject jfo = mFiler.createSourceFile("com.zhqydot.framework.easymodular.core.ModuleLoader", new Element[]{});
-            Writer writer = jfo.openWriter();
-            writer.write(brewCode(modules));
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+    private void createFile(List<TypeElement> modules) {
+        for (TypeElement module : modules) {
+            try {
+                String className = "com.zhqydot.framework.easymodular.core.ModuleLoader$" + module.getSimpleName();
+                JavaFileObject jfo = mFiler.createSourceFile(className, new Element[]{});
+                Writer writer = jfo.openWriter();
+                writer.write(brewCode("ModuleLoader$" + module.getSimpleName(), module));
+                writer.flush();
+                writer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private String brewCode(List<String> modules) {
+    private String brewCode(String className, TypeElement module) {
         StringBuilder builder = new StringBuilder();
         builder.append("package com.zhqydot.framework.easymodular.core;\n\n");
 
@@ -82,13 +85,11 @@ public class ModuleProcessor extends AbstractProcessor {
         builder.append("import android.content.Context;\n");
 
         appendComment(builder);
-        builder.append("public class ModuleLoader { \n\n");
+        builder.append("public class ").append(className).append(" { \n\n");
         builder.append("\tpublic void load(Context context) throws Exception { \n");
-        for (String module : modules) {
-            builder.append("\t\t");
-            builder.append(String.format("((IModule) Class.forName(\"%s\").newInstance()).init(context);", module));
-            builder.append("\n");
-        }
+        builder.append("\t\t");
+        builder.append(String.format("((IModule) Class.forName(\"%s\").newInstance()).init(context);", module.getQualifiedName()));
+        builder.append("\n");
         builder.append("\t}\n");
         builder.append("}");
         return builder.toString();
