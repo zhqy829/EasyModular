@@ -1,4 +1,4 @@
-package com.zhqydot.framework.easymodular.core;
+package name.zhqydot.android.framework.easymodular.core;
 
 import android.content.Context;
 

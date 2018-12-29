@@ -1,4 +1,4 @@
-package com.zhqydot.framework.easymodular.compiler;
+package name.zhqydot.android.framework.easymodular.compiler;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

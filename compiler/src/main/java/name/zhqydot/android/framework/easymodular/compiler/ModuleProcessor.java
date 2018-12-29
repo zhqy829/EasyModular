@@ -1,4 +1,4 @@
-package com.zhqydot.framework.easymodular.compiler;
+package name.zhqydot.android.framework.easymodular.compiler;
 
 import com.google.auto.service.AutoService;
 
@@ -25,22 +25,32 @@ import javax.tools.JavaFileObject;
 @AutoService(Processor.class)
 public class ModuleProcessor extends AbstractProcessor {
 
+    private static final String PACKAGE_NAME = "name.zhqydot.android.framework.easymodular.core";
+    private static final String IMODULE_NAME = "IModule";
+    private static final String IMODULE_REGISTER_NAME = "IModuleRegister";
+    private static final String MODULE_MANAGER_NAME = "ModuleManager";
+    private static final String MODULE_REGISTER_PREFIX = "ModuleRegister";
+    private static final String PACKAGE_DELIMITED = ".";
+    private static final String CLASS_DELIMITED = "$";
+
     private Filer mFiler;
     private Elements mElements;
     private Types mTypes;
+    private String mModuleName;
 
     @Override public synchronized void init(ProcessingEnvironment processingEnvironment) {
         super.init(processingEnvironment);
         mFiler = processingEnvironment.getFiler();
         mElements = processingEnv.getElementUtils();
         mTypes = processingEnv.getTypeUtils();
+        mModuleName = ModuleUtils.getModuleName(mFiler).toLowerCase();
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         Set<? extends Element> moduleElementSet = roundEnvironment.getElementsAnnotatedWith(Module.class);
         List<TypeElement> modules = new ArrayList<>();
-        TypeMirror typeIModular = mElements.getTypeElement("com.zhqydot.framework.easymodular.core.IModule").asType();
+        TypeMirror typeIModular = mElements.getTypeElement(getFullName(IMODULE_NAME)).asType();
         for (Element element : moduleElementSet) {
             if (!mTypes.isSubtype(element.asType(), typeIModular)) {
                 throw new RuntimeException("The module class [" + element.asType().toString() + "] annotated by @Modular must be implements the IModular interface." );
@@ -63,32 +73,34 @@ public class ModuleProcessor extends AbstractProcessor {
     }
 
     private void createFile(List<TypeElement> modules) {
-        for (TypeElement module : modules) {
-            try {
-                String className = "com.zhqydot.framework.easymodular.core.ModuleLoader$" + module.getSimpleName();
-                JavaFileObject jfo = mFiler.createSourceFile(className, new Element[]{});
-                Writer writer = jfo.openWriter();
-                writer.write(brewCode("ModuleLoader$" + module.getSimpleName(), module));
-                writer.flush();
-                writer.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        try {
+            JavaFileObject jfo = mFiler.createSourceFile(getFullName(getModuleLoaderSimpleName()), new Element[]{});
+            Writer writer = jfo.openWriter();
+            writer.write(brewCode(modules));
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
-    private String brewCode(String className, TypeElement module) {
+    private String brewCode(List<TypeElement> modules) {
         StringBuilder builder = new StringBuilder();
-        builder.append("package com.zhqydot.framework.easymodular.core;\n\n");
+        builder.append("package " + PACKAGE_NAME + ";\n\n");
 
-        builder.append("import com.zhqydot.framework.easymodular.core.IModule;\n");
+        builder.append("import ").append(getFullName(IMODULE_NAME)).append(";\n");
+        builder.append("import ").append(getFullName(IMODULE_REGISTER_NAME)).append(";\n");
+        builder.append("import ").append(getFullName(MODULE_MANAGER_NAME)).append(";\n");
         builder.append("import android.content.Context;\n");
 
         appendComment(builder);
-        builder.append("public class ").append(className).append(" { \n\n");
-        builder.append("\tpublic void load(Context context) throws Exception { \n");
+        builder.append("public class ").append(getModuleLoaderSimpleName()).append(" implements " + IMODULE_REGISTER_NAME + " { \n\n");
+        builder.append("\t@Override\n");
+        builder.append("\tpublic void register() throws Exception { \n");
         builder.append("\t\t");
-        builder.append(String.format("((IModule) Class.forName(\"%s\").newInstance()).init(context);", module.getQualifiedName()));
+        for (TypeElement module : modules) {
+            builder.append("ModuleManager.register((IModule) Class.forName(\"").append(module.getQualifiedName()).append("\").newInstance());");
+        }
         builder.append("\n");
         builder.append("\t}\n");
         builder.append("}");
@@ -103,4 +115,11 @@ public class ModuleProcessor extends AbstractProcessor {
         builder.append(" */\n\n");
     }
 
+    private String getModuleLoaderSimpleName() {
+        return MODULE_REGISTER_PREFIX + CLASS_DELIMITED + mModuleName;
+    }
+
+    private String getFullName(String simple) {
+        return PACKAGE_NAME + PACKAGE_DELIMITED + simple;
+    }
 }
