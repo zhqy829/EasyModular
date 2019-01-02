@@ -4,10 +4,10 @@ import android.content.Context;
 import android.util.Log;
 
 import name.zhqydot.android.framework.easymodular.compiler.Module;
-import name.zhqydot.android.framework.easymodular.core.IModule;
+import name.zhqydot.android.framework.easymodular.core.IModuleInit;
 
-@Module
-public class AppModule implements IModule {
+@Module(depend = AppModuleDepend.class)
+public class AppModule implements IModuleInit, AppModuleDepend {
 
     @Override
     public void earlyInit(Context context) {
@@ -22,5 +22,10 @@ public class AppModule implements IModule {
     @Override
     public void delayInit(Context context) {
         Log.e("Test", "App Module delay init");
+    }
+
+    @Override
+    public void app() {
+        Log.e("Test", "AppModule app()");
     }
 }

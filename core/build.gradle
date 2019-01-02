@@ -9,7 +9,7 @@ android {
         versionName "1.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
+        javaCompileOptions { annotationProcessorOptions { includeCompileClasspath = true } }
     }
     buildTypes {
         release {
@@ -28,17 +28,18 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
     implementation 'com.android.support:appcompat-v7:27.0.2'
+    implementation project(':compiler')
 }
 
 task deleteOldJar(type: Delete) {
-    delete 'build/outputs/test.jar'
+    delete 'build/outputs/easymodular-core.jar'
 }
 
 task exportJar(type: Copy) {
     from('build/intermediates/intermediate-jars/release/')
     into('build/libs/')
     include('classes.jar')
-    rename ('classes.jar', 'test.jar')
+    rename ('classes.jar', 'easymodular-core.jar')
 }
 
 exportJar.dependsOn(deleteOldJar, build)

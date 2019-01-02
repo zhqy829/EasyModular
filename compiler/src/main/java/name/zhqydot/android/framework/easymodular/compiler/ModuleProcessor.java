@@ -17,6 +17,8 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -26,7 +28,7 @@ import javax.tools.JavaFileObject;
 public class ModuleProcessor extends AbstractProcessor {
 
     private static final String PACKAGE_NAME = "name.zhqydot.android.framework.easymodular.core";
-    private static final String IMODULE_NAME = "IModule";
+    private static final String IMODULE_INIT_NAME = "IModuleInit";
     private static final String IMODULE_REGISTER_NAME = "IModuleRegister";
     private static final String MODULE_MANAGER_NAME = "ModuleManager";
     private static final String MODULE_REGISTER_PREFIX = "ModuleRegister";
@@ -50,10 +52,20 @@ public class ModuleProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> set, RoundEnvironment roundEnvironment) {
         Set<? extends Element> moduleElementSet = roundEnvironment.getElementsAnnotatedWith(Module.class);
         List<TypeElement> modules = new ArrayList<>();
-        TypeMirror typeIModular = mElements.getTypeElement(getFullName(IMODULE_NAME)).asType();
+        TypeMirror typeModuleInit = mElements.getTypeElement(getFullName(IMODULE_INIT_NAME)).asType();
         for (Element element : moduleElementSet) {
-            if (!mTypes.isSubtype(element.asType(), typeIModular)) {
+            if (!mTypes.isSubtype(element.asType(), typeModuleInit)) {
                 throw new RuntimeException("The module class [" + element.asType().toString() + "] annotated by @Modular must be implements the IModular interface." );
+            }
+            TypeMirror typeModuleDepend = null;
+            try {
+                Class<? extends IModuleDepend> dependClass = element.getAnnotation(Module.class).depend();
+                typeModuleDepend = mElements.getTypeElement(dependClass.getCanonicalName()).asType();
+            } catch (MirroredTypeException mte) {
+                typeModuleDepend = mte.getTypeMirror();
+            }
+            if (!mTypes.isSubtype(element.asType(), typeModuleDepend)) {
+                throw new RuntimeException("The module class [" + element.asType().toString() + "] annotated by @Modular must be implements the depend interface." );
             }
             modules.add(((TypeElement) element));
         }
@@ -88,10 +100,20 @@ public class ModuleProcessor extends AbstractProcessor {
         StringBuilder builder = new StringBuilder();
         builder.append("package " + PACKAGE_NAME + ";\n\n");
 
-        builder.append("import ").append(getFullName(IMODULE_NAME)).append(";\n");
+        builder.append("import ").append(getFullName(IMODULE_INIT_NAME)).append(";\n");
         builder.append("import ").append(getFullName(IMODULE_REGISTER_NAME)).append(";\n");
         builder.append("import ").append(getFullName(MODULE_MANAGER_NAME)).append(";\n");
         builder.append("import android.content.Context;\n");
+
+        for (TypeElement module : modules) {
+            try {
+                Class<? extends IModuleDepend> dependClass = module.getAnnotation(Module.class).depend();
+                builder.append("import ").append(dependClass.getCanonicalName()).append(";\n");
+            } catch (MirroredTypeException mte) {
+                TypeElement typeElement = (TypeElement) ((DeclaredType) mte.getTypeMirror()).asElement();
+                builder.append("import ").append(typeElement.getQualifiedName()).append(";\n");
+            }
+        }
 
         appendComment(builder);
         builder.append("public class ").append(getModuleLoaderSimpleName()).append(" implements " + IMODULE_REGISTER_NAME + " { \n\n");
@@ -99,9 +121,18 @@ public class ModuleProcessor extends AbstractProcessor {
         builder.append("\tpublic void register() throws Exception { \n");
         builder.append("\t\t");
         for (TypeElement module : modules) {
-            builder.append("ModuleManager.register((IModule) Class.forName(\"").append(module.getQualifiedName()).append("\").newInstance());");
+            String dependClassSimpleName = null;
+            try {
+                Class<? extends IModuleDepend> dependClass = module.getAnnotation(Module.class).depend();
+                dependClassSimpleName = dependClass.getSimpleName();
+            } catch (MirroredTypeException mte) {
+                TypeElement typeElement = (TypeElement) ((DeclaredType) mte.getTypeMirror()).asElement();
+                dependClassSimpleName = typeElement.getSimpleName().toString();
+            }
+            builder.append("ModuleManager.registerModule(").
+                    append(dependClassSimpleName).append(".class").append(", ")
+                    .append("(").append(dependClassSimpleName).append(") Class.forName(\"").append(module.getQualifiedName()).append("\").newInstance());\n");
         }
-        builder.append("\n");
         builder.append("\t}\n");
         builder.append("}");
         return builder.toString();
