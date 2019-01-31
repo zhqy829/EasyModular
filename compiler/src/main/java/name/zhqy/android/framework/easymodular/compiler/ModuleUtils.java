@@ -1,4 +1,4 @@
-package name.zhqydot.android.framework.easymodular.compiler;
+package name.zhqy.android.framework.easymodular.compiler;
 
 import java.io.File;
 import java.io.IOException;

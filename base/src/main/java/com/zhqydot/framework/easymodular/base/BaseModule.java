@@ -3,8 +3,8 @@ package com.zhqydot.framework.easymodular.base;
 import android.content.Context;
 import android.util.Log;
 
-import name.zhqydot.android.framework.easymodular.compiler.Module;
-import name.zhqydot.android.framework.easymodular.core.IModuleInit;
+import name.zhqy.android.framework.easymodular.compiler.Module;
+import name.zhqy.android.framework.easymodular.core.IModuleInit;
 
 @Module(depend = BaseModuleDepend.class)
 public class BaseModule implements IModuleInit, BaseModuleDepend {

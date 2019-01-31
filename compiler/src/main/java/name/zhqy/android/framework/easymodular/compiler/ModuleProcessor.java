@@ -1,4 +1,4 @@
-package name.zhqydot.android.framework.easymodular.compiler;
+package name.zhqy.android.framework.easymodular.compiler;
 
 import com.google.auto.service.AutoService;
 
@@ -27,7 +27,7 @@ import javax.tools.JavaFileObject;
 @AutoService(Processor.class)
 public class ModuleProcessor extends AbstractProcessor {
 
-    private static final String PACKAGE_NAME = "name.zhqydot.android.framework.easymodular.core";
+    private static final String PACKAGE_NAME = "name.zhqy.android.framework.easymodular.core";
     private static final String IMODULE_INIT_NAME = "IModuleInit";
     private static final String IMODULE_REGISTER_NAME = "IModuleRegister";
     private static final String MODULE_MANAGER_NAME = "ModuleManager";

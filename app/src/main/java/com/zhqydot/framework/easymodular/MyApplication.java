@@ -2,7 +2,7 @@ package com.zhqydot.framework.easymodular;
 
 import android.app.Application;
 
-import name.zhqydot.android.framework.easymodular.core.ModuleManager;
+import name.zhqy.android.framework.easymodular.core.ModuleManager;
 
 public class MyApplication extends Application {
     @Override

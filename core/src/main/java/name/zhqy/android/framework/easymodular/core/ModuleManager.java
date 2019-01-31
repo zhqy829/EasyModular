@@ -1,4 +1,4 @@
-package name.zhqydot.android.framework.easymodular.core;
+package name.zhqy.android.framework.easymodular.core;
 
 import android.content.Context;
 import android.support.annotation.Nullable;
@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import name.zhqydot.android.framework.easymodular.compiler.IModuleDepend;
+import name.zhqy.android.framework.easymodular.compiler.IModuleDepend;
 
 public class ModuleManager {
 
@@ -20,7 +20,7 @@ public class ModuleManager {
     public static void init(Context context) {
         sContext = context.getApplicationContext();
 
-        List<String> classes = ClassUtils.getClasses(context, "name.zhqydot.android.framework.easymodular.core.ModuleRegister$");
+        List<String> classes = ClassUtils.getClasses(context, "name.zhqy.android.framework.easymodular.core.ModuleRegister$");
         for (String className : classes) {
             try {
                 Class clazz = Class.forName(className);
