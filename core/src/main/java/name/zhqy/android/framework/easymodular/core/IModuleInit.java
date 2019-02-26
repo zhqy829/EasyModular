@@ -1,9 +1,9 @@
 package name.zhqy.android.framework.easymodular.core;
 
-import android.content.Context;
+import android.app.Application;
 
 public interface IModuleInit {
-    void earlyInit(Context context);
-    void lateInit(Context context);
-    void delayInit(Context context);
+    void earlyInit(Application application);
+    void lateInit(Application application);
+    void delayInit(Application application);
 }

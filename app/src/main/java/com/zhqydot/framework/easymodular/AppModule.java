@@ -1,6 +1,6 @@
 package com.zhqydot.framework.easymodular;
 
-import android.content.Context;
+import android.app.Application;
 import android.util.Log;
 
 import name.zhqy.android.framework.easymodular.compiler.Module;
@@ -10,17 +10,17 @@ import name.zhqy.android.framework.easymodular.core.IModuleInit;
 public class AppModule implements IModuleInit, AppModuleDepend {
 
     @Override
-    public void earlyInit(Context context) {
+    public void earlyInit(Application application) {
         Log.e("Test", "App Module early init");
     }
 
     @Override
-    public void lateInit(Context context) {
+    public void lateInit(Application application) {
         Log.e("Test", "App Module late init");
     }
 
     @Override
-    public void delayInit(Context context) {
+    public void delayInit(Application application) {
         Log.e("Test", "App Module delay init");
     }
 

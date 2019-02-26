@@ -1,26 +1,28 @@
 package name.zhqy.android.framework.easymodular.core;
 
-import android.content.Context;
+import android.app.Application;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
 import name.zhqy.android.framework.easymodular.compiler.IModuleDepend;
 
 public class ModuleManager {
 
-    private static Context sContext;
-    private static List<IModuleInit> sModuleInitList = new ArrayList<>();
+    private static Application sApplication;
+    private static Set<PriorityModule> sPriorityModuleSet = new TreeSet<>();
     private static Map<Class<? extends IModuleDepend>, IModuleDepend> sModuleDependMap = new HashMap<>();
 
-    public static void init(Context context) {
-        sContext = context.getApplicationContext();
+    public static void init(Application application) {
+        sApplication = application;
 
-        List<String> classes = ClassUtils.getClasses(context, "name.zhqy.android.framework.easymodular.core.ModuleRegister$");
+        List<String> classes = ClassUtils.getClasses(sApplication, "name.zhqy.android.framework.easymodular.core.ModuleRegister$");
         for (String className : classes) {
             try {
                 Class clazz = Class.forName(className);
@@ -32,22 +34,22 @@ public class ModuleManager {
                 Log.e("ModuleManager", e.getMessage());
             }
         }
-        for (IModuleInit module : sModuleInitList) {
-            module.earlyInit(context);
+        for (PriorityModule priorityModule : sPriorityModuleSet) {
+            priorityModule.module.earlyInit(sApplication);
         }
-        for (IModuleInit module : sModuleInitList) {
-            module.lateInit(context);
+        for (PriorityModule priorityModule : sPriorityModuleSet) {
+            priorityModule.module.lateInit(sApplication);
         }
     }
 
-    static <MD extends IModuleDepend> void registerModule(Class<MD> moduleDependClass, MD module) {
+    static <MD extends IModuleDepend> void registerModule(Class<MD> moduleDependClass, MD module, int priority) {
         if (!(module instanceof IModuleInit)) {
             throw new RuntimeException("Module must be implements IModuleInit.");
         }
         if (!moduleDependClass.isAssignableFrom(module.getClass())) {
             throw new RuntimeException("Module must be implements the depend interface.");
         }
-        sModuleInitList.add((IModuleInit) module);
+        sPriorityModuleSet.add(new PriorityModule((IModuleInit) module, priority));
         sModuleDependMap.put(moduleDependClass, module);
     }
 
@@ -58,9 +60,29 @@ public class ModuleManager {
     }
 
     public static void startDelayInit() {
-        for (IModuleInit moduleInit : sModuleInitList) {
-            moduleInit.delayInit(sContext);
+        for (PriorityModule priorityModule : sPriorityModuleSet) {
+            priorityModule.module.delayInit(sApplication);
         }
-        sModuleInitList.clear();
+        sPriorityModuleSet.clear();
+    }
+
+    private static class PriorityModule implements Comparable<PriorityModule> {
+
+        private IModuleInit module;
+        private int priority;
+
+        public PriorityModule(IModuleInit module, int priority) {
+            this.module = module;
+            this.priority = priority;
+        }
+
+        @Override
+        public int compareTo(@NonNull PriorityModule o) {
+            if (priority > o.priority) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }
     }
 }

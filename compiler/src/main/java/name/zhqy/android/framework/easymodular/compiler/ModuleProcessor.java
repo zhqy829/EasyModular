@@ -103,7 +103,7 @@ public class ModuleProcessor extends AbstractProcessor {
         builder.append("import ").append(getFullName(IMODULE_INIT_NAME)).append(";\n");
         builder.append("import ").append(getFullName(IMODULE_REGISTER_NAME)).append(";\n");
         builder.append("import ").append(getFullName(MODULE_MANAGER_NAME)).append(";\n");
-        builder.append("import android.content.Context;\n");
+        builder.append("import android.app.Application;\n");
 
         for (TypeElement module : modules) {
             try {
@@ -129,9 +129,10 @@ public class ModuleProcessor extends AbstractProcessor {
                 TypeElement typeElement = (TypeElement) ((DeclaredType) mte.getTypeMirror()).asElement();
                 dependClassSimpleName = typeElement.getSimpleName().toString();
             }
-            builder.append("ModuleManager.registerModule(").
-                    append(dependClassSimpleName).append(".class").append(", ")
-                    .append("(").append(dependClassSimpleName).append(") Class.forName(\"").append(module.getQualifiedName()).append("\").newInstance());\n");
+            builder.append("ModuleManager.registerModule(")
+                    .append(dependClassSimpleName).append(".class").append(", ")
+                    .append("(").append(dependClassSimpleName).append(") Class.forName(\"").append(module.getQualifiedName()).append("\").newInstance(), ")
+                    .append(module.getAnnotation(Module.class).priotity()).append(");\n");
         }
         builder.append("\t}\n");
         builder.append("}");
